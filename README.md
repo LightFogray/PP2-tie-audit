@@ -27,8 +27,9 @@ rerun on the released archive.
 
 | Quantity | Value | Script |
 |---|---|---|
-| Intraclass correlation of tie propensity, binomial null removed | 0.214 | `scripts/verify_rater_variance.py` |
-| Intraclass correlation of left/right preference, same treatment | 0.020 | `scripts/verify_rater_variance.py` |
+| Intraclass correlation of tie propensity, binomial null removed, matched respondents | 0.189 (0.176 to 0.204) | `scripts/icc_formal.py` |
+| Intraclass correlation of left/right preference, same respondents | 0.020 (0.018 to 0.022) | `scripts/icc_formal.py` |
+| Tie correlation on the wider set with >=6 comparisons of any kind | 0.214 (0.203 to 0.226) | `scripts/icc_formal.py` |
 | AUC from respondent identity | 0.812 | `scripts/tie_sources.py` |
 | AUC from image content | 0.532 | `scripts/tie_sources.py` |
 | AUC from pair composition | 0.502 | `scripts/tie_sources.py` |
@@ -37,9 +38,13 @@ rerun on the released archive.
 | Transfer of tie propensity vs binary consistency | 0.64 vs 0.19 | `scripts/transfer_tie_vs_consistency.py` |
 | ICC on all six questions | 0.188 to 0.246 | `scripts/six_attributes.py` |
 
-The ICC is computed as the between-respondent share of variance after subtracting
-the binomial null implied by the votes per respondent. Without that subtraction
-the same script returns 0.263 and 0.086; the null baselines are 0.062 and 0.067.
+The ICC is the weighted between-respondent variance divided by p(1-p), minus the
+quantity sum(w_i/n_i) that the same ratio takes when every respondent shares one
+probability, then rescaled. The two outcomes are compared on respondents who
+qualify under both (25,748 people), so the ratio of 9.6 is not confounded by
+sample composition. Intervals come from resampling respondents. The assumption is
+independent binomial draws within a respondent and an exchangeable distribution
+of respondent rates.
 
 ### 3. A respondent-aware model predicts better
 
@@ -51,25 +56,33 @@ histories or the calibration constant.
 | Quantity | Value | Script |
 |---|---|---|
 | Three-class log loss, discard ties | 1.1665 | `scripts/unified_model.py` |
-| Three-class log loss, global tie scale | 1.1004 | `scripts/unified_model.py` |
-| Three-class log loss, respondent scales | 1.0893 | `scripts/unified_model.py` |
-| Relative improvement, 15 of 15 cities | 6.62% | `scripts/unified_summary.py` |
-| Share attributable to respondent heterogeneity | 1.00% (14 of 15) | `scripts/unified_summary.py` |
-| Tie average precision | 0.089 to 0.217 | `scripts/unified_summary.py` |
+| Three-class log loss, global tie scale | 1.1003 | `scripts/unified_model.py` |
+| Three-class log loss, respondent scales | 1.0855 | `scripts/unified_model.py` |
+| Relative improvement, 15 of 15 cities | 6.94% | `scripts/unified_summary.py` |
+| Share attributable to respondent heterogeneity | 1.34% (15 of 15) | `scripts/unified_summary.py` |
+| Tie average precision | 0.089 to 0.209 | `scripts/unified_summary.py` |
 | Estimator recovery on synthetic data | r = 0.93 (image), 0.94 (respondent) | `scripts/hier_davidson.py --selfcheck` |
 
 ### 4. The truncation does not move place scores
 
 | Quantity | Value | Script |
 |---|---|---|
-| Rank correlation of item strengths, with and without respondent scales | 0.9989 | `scripts/city_score_consequence.py` |
-| Change in a city's mean strength | at most 0.017 against a within-city SD of about 1.2 | `scripts/city_score_consequence.py` |
+| Rank correlation of item strengths, with and without respondent scales | 0.9999 | `scripts/city_score_clean.py` |
+| Change in a city's mean strength | at most 0.017 against a within-city SD of about 1.2 | `scripts/city_score_clean.py` |
+| Median per-image standard deviation, hierarchical / global | 0.9997 (range 0.997 to 1.005) | `scripts/city_score_clean.py` |
+
+The bootstrap resamples respondents with multiplicity preserved, so a respondent
+drawn three times enters three times, and it measures the standard deviation of
+each image's strength across replicates rather than the spread of strengths
+within a replicate. The latter, which an earlier version computed, describes how
+far apart the places are, not how well each is determined.
 
 ### 5. The truncation is uneven between cities, not within them
 
 | Quantity | Value | Script |
 |---|---|---|
-| Mean Moran's I of evidence depth, within city | +0.004, 3 of 56 at p < 0.05 | `scripts/evidence_depth_spatial.py` |
+| Mean Moran's I of evidence depth, within city, local metric coordinates | +0.003 at six neighbours, 5 of 56 at p < 0.05 | `scripts/evidence_depth_spatial.py` |
+| Same across neighbourhood sizes | +0.005, +0.003, +0.003, +0.002 at k = 4, 6, 8, 10 | `scripts/evidence_depth_spatial.py` |
 | Share of images with three or fewer comparisons | 15.6% to 20.9% | `scripts/evidence_depth_spatial.py` |
 | That share against visual redundancy | r = +0.52 | `scripts/evidence_depth_spatial.py` |
 | That share against city tie rate | r = +0.75 | `scripts/evidence_depth_spatial.py` |

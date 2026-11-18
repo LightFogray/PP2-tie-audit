@@ -84,17 +84,17 @@ def main() -> int:
         dv, fv, ev = pv
         thref = th_all[dv["ref_i"]]
         best, kbest = None, None
+        # 验证折的全局 tie scale 先算一次，拟合与预测必须用同一个
+        _, nu_g_v = fit_global_nu(thref[fv], dv["test_i"][fv],
+                                  dv["on_left"][fv], dv["y"][fv])
+        g_fv = np.array([gamma_map.get(r, 0.0) for r in dv["voters"][fv]])
+        g_ev = np.array([gamma_map.get(r, 0.0) for r in dv["voters"][ev]])
         for kap in args.kappas:
             th_h = fit_theta(thref[fv], dv["test_i"][fv], dv["on_left"][fv],
                              dv["y"][fv],
-                             np.exp(kap * np.array([gamma_map.get(r, 0.0)
-                                                    for r in dv["voters"][fv]])))
-            # 用验证折内的全局 nu 作基准
-            _, nu_g = fit_global_nu(thref[fv], dv["test_i"][fv],
-                                    dv["on_left"][fv], dv["y"][fv])
-            g_ev = np.array([gamma_map.get(r, 0.0) for r in dv["voters"][ev]])
+                             nu_g_v * np.exp(kap * g_fv))
             p = p3mat(th_h, thref[ev], dv["test_i"][ev], dv["on_left"][ev],
-                      nu_r=nu_g * np.exp(kap * g_ev))
+                      nu_r=nu_g_v * np.exp(kap * g_ev))
             s = ll3(p, dv["y"][ev])
             if best is None or s < best:
                 best, kbest = s, kap
